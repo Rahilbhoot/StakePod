@@ -6,11 +6,8 @@ import type { Pod, Checkin, CheckinStatus, LedgerEntry, WindowStatus } from '../
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
-  Clock,
   CheckCircle2,
-  XCircle,
   AlertTriangle,
-  Zap,
   Shield,
   TrendingUp,
   Calendar,
@@ -21,7 +18,6 @@ import {
   Check,
   CreditCard,
   Timer,
-  Send,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
@@ -327,14 +323,7 @@ export default function PodDetail({ podId }: { podId: string }) {
 
   /* ─── status badge ─── */
 
-  const statusBadgeClass =
-    pod?.status === 'active'
-      ? 'badge-success'
-      : pod?.status === 'pending'
-        ? 'badge-warning'
-        : pod?.status === 'completed'
-          ? 'badge-info'
-          : 'badge-neutral'
+
 
   /* ─── loading / error ─── */
 
@@ -394,56 +383,53 @@ export default function PodDetail({ podId }: { podId: string }) {
       className="max-w-5xl mx-auto px-4 py-8 space-y-6"
     >
       {/* ═══ 1. HEADER ═══ */}
-      <motion.div variants={itemVariants} className="glass-card p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-3xl border border-slate-800/60 bg-slate-900/80 backdrop-blur-xl shadow-xl p-6 sm:p-10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{ background: 'radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent 50%)' }}
+        />
+        
+        <div className="relative">
           <button
             onClick={() => navigate({ to: '/dashboard' })}
-            className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors shrink-0"
+            className="flex items-center gap-2 text-slate-400 hover:text-emerald-400 transition-colors mb-6 w-fit"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm font-medium">Back</span>
           </button>
 
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-extrabold text-slate-100 truncate">
-              {pod.name}
-            </h1>
-            <p className="text-emerald-400 text-sm font-medium truncate">
-              {pod.goal}
-            </p>
-          </div>
-
-          <span className={statusBadgeClass}>
-            {pod.status === 'active' && <Zap className="w-3 h-3" />}
-            {pod.status === 'pending' && <Clock className="w-3 h-3" />}
-            {pod.status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
-            {pod.status.charAt(0).toUpperCase() + pod.status.slice(1)}
-          </span>
-        </div>
-
-        {/* Total Pot + Invite */}
-        <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <DollarSign className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-3xl font-extrabold text-gradient">
-                {pod.currency}
-                {totalPot.toLocaleString()}
+          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-start gap-6">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${pod.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`} />
+                {pod.status} cycle · {pod.check_in_window_start}–{pod.check_in_window_end}
+              </div>
+              <h1 className="mt-3 truncate font-black text-4xl sm:text-6xl text-slate-100">
+                {pod.name}
+              </h1>
+              <p className="mt-2 max-w-xl text-sm sm:text-base text-slate-400">
+                {pod.goal}
               </p>
-              <p className="label-text">Total Pot</p>
+            </div>
+
+            <div className="shrink-0 sm:text-right">
+              <div className="text-xs uppercase tracking-[0.18em] text-slate-400 mb-1">Pot Size</div>
+              <div className="font-black text-4xl sm:text-6xl text-gradient leading-none">
+                {pod.currency}{totalPot.toLocaleString()}
+              </div>
+              <div className="mt-2 text-xs text-slate-500 font-mono">
+                {pod.currency}{pod.stake_amount} × {paidMembers} paid members
+              </div>
             </div>
           </div>
-
-          <button onClick={handleCopyInvite} className="btn-secondary flex items-center gap-2">
-            {copied ? (
-              <Check className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <Copy className="w-4 h-4" />
-            )}
-            {copied ? 'Copied!' : 'Copy Invite Link'}
-          </button>
+          
+          <div className="mt-8 flex justify-end">
+            <button onClick={handleCopyInvite} className="btn-secondary flex items-center gap-2 text-xs py-2 px-4 rounded-full">
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? 'Copied!' : 'Copy Invite Link'}
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -496,249 +482,192 @@ export default function PodDetail({ podId }: { podId: string }) {
       </motion.div>
 
       {/* ═══ 3. CHECK-IN WIDGET ═══ */}
-      <motion.div variants={itemVariants} className="glass-card p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-emerald-400" />
-            Today's Check-In
-          </h2>
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-3xl border border-slate-800/60 bg-slate-900/80 backdrop-blur-xl shadow-xl p-6 sm:p-10">
+        <div className="flex items-center justify-between mb-8">
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            Today's Check-in
+          </div>
           <span
-            className={
-              windowStatus === 'in_window'
-                ? 'badge-success'
-                : windowStatus === 'before_window'
-                  ? 'badge-warning'
-                  : 'badge-danger'
-            }
+            className={`rounded-full px-3 py-1 text-xs font-mono uppercase tracking-wider ${
+              !hasPaid
+                ? 'bg-slate-800 text-slate-400'
+                : windowStatus === 'in_window'
+                  ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30'
+                  : 'bg-slate-800/60 text-slate-300 ring-1 ring-slate-700/50'
+            }`}
           >
-            {windowStatus === 'in_window'
-              ? 'Window Open'
-              : windowStatus === 'before_window'
-                ? 'Upcoming'
-                : 'Closed'}
+            {!hasPaid
+              ? 'Locked'
+              : windowStatus === 'in_window'
+                ? 'Open Now'
+                : windowStatus === 'before_window'
+                  ? 'Waiting'
+                  : 'Closed'}
           </span>
         </div>
 
         <AnimatePresence mode="wait">
-          {/* ─ Not Paid ─ */}
-          {!hasPaid && (
+          {!hasPaid ? (
             <motion.div
-              key="not-paid"
-              variants={checkinVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-5"
-            >
-              <div className="flex items-start gap-3">
-                <Shield className="w-6 h-6 text-amber-400 mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-amber-300 font-semibold">
-                    Complete stake payment
-                  </p>
-                  <p className="text-amber-400/70 text-sm mt-1">
-                    You need to pay your stake to participate in check-ins.
-                  </p>
-                  <button
-                    className="btn-primary mt-4 flex items-center gap-2"
-                    onClick={handlePay}
-                    disabled={isPaying}
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    {isPaying ? 'Redirecting...' : 'Pay Stake via Stripe'}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ─ Before Window ─ */}
-          {hasPaid && windowStatus === 'before_window' && !todayCheckin && (
-            <motion.div
-              key="before-window"
+              key="unpaid"
               variants={checkinVariants}
               initial="initial"
               animate="animate"
               exit="exit"
               className="text-center py-6"
             >
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/80 mx-auto mb-4">
-                <Timer className="w-8 h-8 text-slate-400" />
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-slate-800/80 text-slate-400 mb-4">
+                <Shield className="h-7 w-7" />
               </div>
-              <p className="text-slate-300 font-semibold text-lg">
-                Opens in{' '}
-                <span className="text-emerald-400 font-mono">{countdown}</span>
+              <h3 className="font-black text-2xl text-slate-100">Pledge your stake to unlock</h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-slate-400 mb-6">
+                Your check-ins won't count until your stake is paid. Skin in the game is the whole point.
               </p>
-              <p className="text-slate-500 text-sm mt-2">
-                Window: {pod.check_in_window_start} – {pod.check_in_window_end} IST
-              </p>
-              <button className="btn-primary mt-5 opacity-50 cursor-not-allowed" disabled>
-                <Clock className="w-4 h-4 inline mr-2" />
-                Check-In Opens at {pod.check_in_window_start}
+              <button
+                className="btn-primary"
+                onClick={handlePay}
+                disabled={isPaying}
+              >
+                {isPaying ? 'Processing...' : 'Pay Stake via Stripe'}
               </button>
             </motion.div>
-          )}
-
-          {/* ─ Active Window ─ */}
-          {hasPaid && windowStatus === 'in_window' && !todayCheckin && (
+          ) : todayCheckin ? (
             <motion.div
-              key="active-window"
+              key="done"
               variants={checkinVariants}
               initial="initial"
               animate="animate"
               exit="exit"
-              className="space-y-4"
+              className="text-center py-8"
             >
-              <div className="text-center">
-                <p className="text-slate-400 text-sm mb-1">
-                  Closes in{' '}
-                  <span className="text-amber-400 font-mono font-semibold">
-                    {countdown}
-                  </span>
-                </p>
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-emerald-500/15 text-emerald-400 mb-4 glow-emerald">
+                <CheckCircle2 className="h-8 w-8" />
               </div>
-
+              <h3 className="font-black text-2xl text-slate-100">Checked in!</h3>
+              <p className="mt-2 text-emerald-400 font-medium">You're safe for today.</p>
+              {todayCheckin.note && (
+                <p className="mt-4 p-4 rounded-xl bg-slate-800/50 text-slate-300 text-sm italic max-w-md mx-auto">
+                  "{todayCheckin.note}"
+                </p>
+              )}
+            </motion.div>
+          ) : windowStatus === 'before_window' ? (
+            <motion.div
+              key="waiting"
+              variants={checkinVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="text-center py-6"
+            >
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-slate-800/80 text-slate-400 mb-4">
+                <Timer className="h-7 w-7" />
+              </div>
+              <h3 className="font-black text-2xl text-slate-100">Window opens in {countdown}</h3>
+              <p className="mt-2 text-slate-400 text-sm">
+                Check back between {pod.check_in_window_start} and {pod.check_in_window_end} (IST).
+              </p>
+            </motion.div>
+          ) : windowStatus === 'in_window' ? (
+            <motion.div
+              key="active"
+              variants={checkinVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="max-w-md mx-auto text-center"
+            >
               <textarea
-                className="input-field resize-none"
-                rows={2}
-                placeholder="Optional note about your progress..."
                 value={checkinNote}
                 onChange={(e) => setCheckinNote(e.target.value)}
-                maxLength={500}
+                placeholder="Optional: Add a note about your progress..."
+                className="input-field min-h-[100px] mb-4 resize-none"
               />
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="btn-primary glow-emerald w-full flex items-center justify-center gap-2 py-3 text-lg font-bold"
+              <button
+                className="btn-primary w-full py-4 text-lg font-bold flex items-center justify-center gap-2 glow-emerald"
                 onClick={handleCheckin}
                 disabled={isCheckingIn}
               >
-                {isCheckingIn ? (
-                  <>
-                    <Send className="w-5 h-5 animate-pulse" />
-                    Checking In...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-5 h-5" />
-                    Check In Now
-                  </>
-                )}
-              </motion.button>
+                <CheckCircle2 className="w-6 h-6" />
+                {isCheckingIn ? 'Checking In...' : 'Check In Now'}
+              </button>
+              <p className="text-slate-400 text-sm font-mono mt-4">
+                Closes in {countdown}
+              </p>
             </motion.div>
-          )}
-
-          {/* ─ Already Checked In ─ */}
-          {hasPaid && todayCheckin && (
-            <motion.div
-              key="checked-in"
-              variants={checkinVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-5"
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20 shrink-0">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-emerald-300 font-bold text-lg">
-                    Checked in for today! 🎉
-                  </p>
-                  {todayCheckin.note && (
-                    <p className="text-emerald-400/70 text-sm mt-1 italic">
-                      "{todayCheckin.note}"
-                    </p>
-                  )}
-                  <p className="text-slate-500 text-xs mt-2">
-                    {todayCheckin.checked_at
-                      ? `at ${new Date(todayCheckin.checked_at).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}`
-                      : ''}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ─ Missed / After Window ─ */}
-          {hasPaid && windowStatus === 'after_window' && !todayCheckin && (
+          ) : (
             <motion.div
               key="missed"
               variants={checkinVariants}
               initial="initial"
               animate="animate"
               exit="exit"
-              className="rounded-xl bg-red-500/10 border border-red-500/20 p-5"
+              className="text-center py-6"
             >
-              <div className="flex items-start gap-3">
-                <XCircle className="w-6 h-6 text-red-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-red-300 font-semibold">
-                    Window closed — missed today
-                  </p>
-                  <p className="text-red-400/60 text-sm mt-1">
-                    The check-in window ({pod.check_in_window_start} –{' '}
-                    {pod.check_in_window_end} IST) has ended.
-                  </p>
-                </div>
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-red-500/15 text-red-400 mb-4">
+                <AlertTriangle className="h-7 w-7" />
               </div>
+              <h3 className="font-black text-2xl text-slate-100">Window Closed</h3>
+              <p className="mt-2 text-red-400 font-medium">You missed today's check-in.</p>
             </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
 
       {/* ═══ 4. CONTRIBUTION GRID ═══ */}
-      <motion.div variants={itemVariants} className="glass-card p-6">
-        <h2 className="text-lg font-bold text-slate-100 mb-5 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-emerald-400" />
-          30-Day Activity
-        </h2>
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-3xl border border-slate-800/60 bg-slate-900/80 backdrop-blur-xl shadow-xl p-6 sm:p-10">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-start gap-4 mb-8">
+          <div className="min-w-0">
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Last 30 Days</div>
+            <h2 className="mt-1 font-black text-3xl sm:text-4xl text-slate-100">
+              Pod Activity
+            </h2>
+          </div>
+          
+          <div className="flex shrink-0 items-center gap-4 text-xs font-mono text-slate-400">
+            <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-emerald-500" /> Success</div>
+            <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-red-500" /> Missed</div>
+            <div className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-sm bg-amber-400" /> Pending</div>
+          </div>
+        </div>
 
-        <div className="space-y-3 overflow-x-auto">
+        <div className="space-y-4 overflow-x-auto pb-4">
           {pod.pod_members.map((member) => {
-
             let failCounter = 0
-
             return (
-              <div key={member.user_id} className="flex items-center gap-3 min-w-0">
-                <div className="w-28 shrink-0 truncate">
-                  <span className="text-sm text-slate-300 font-medium">
+              <div key={member.user_id} className="flex items-center gap-4 min-w-[600px]">
+                <div className="w-32 shrink-0 truncate">
+                  <span className="text-sm font-semibold text-slate-200">
                     {member.users?.name || member.users?.email?.split('@')[0] || 'User'}
                   </span>
                   {member.stake_paid && (
-                    <span className="ml-1.5 badge-success text-[9px] py-0 px-1.5">
+                    <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       Paid
                     </span>
                   )}
                 </div>
 
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex-1 flex gap-1.5 justify-end">
                   {last30.map((day) => {
-                    const status = checkinMap[member.user_id]?.[day] as
-                      | CheckinStatus
-                      | undefined
+                    const status = checkinMap[member.user_id]?.[day] as CheckinStatus | undefined
                     const isFailed = status === 'failed'
                     let usedFreeStrike = false
                     if (isFailed) {
                       failCounter++
-                      if (failCounter <= pod.free_strikes) {
-                        usedFreeStrike = true
-                      }
+                      if (failCounter <= pod.free_strikes) usedFreeStrike = true
                     }
 
                     return (
                       <div key={day} className="group relative">
                         <div
-                          className={`w-4 h-4 rounded-sm ${getSquareColor(status)} transition-all hover:ring-1 hover:ring-white/30 relative`}
+                          className={`w-[14px] h-[14px] rounded-[3px] ${getSquareColor(status)} transition-all hover:ring-2 hover:ring-white/40 hover:scale-110 relative`}
                         >
                           {usedFreeStrike && (
                             <Shield className="w-2.5 h-2.5 text-white absolute -top-0.5 -right-0.5 drop-shadow" />
                           )}
                         </div>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-slate-300 text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-slate-700">
-                          {day}: {status || 'none'}
+                        <div className="pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] font-mono text-slate-300 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                          {day.split('-').slice(1).join('/')} · {status || 'none'}
                           {usedFreeStrike && ' (free strike)'}
                         </div>
                       </div>
@@ -750,24 +679,9 @@ export default function PodDetail({ podId }: { podId: string }) {
           })}
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-4 mt-5 pt-4 border-t border-slate-800/60">
-          <span className="label-text">Legend:</span>
-          {[
-            { color: 'bg-emerald-500', label: 'Success' },
-            { color: 'bg-red-500', label: 'Failed' },
-            { color: 'bg-amber-400', label: 'Pending' },
-            { color: 'bg-slate-800/60', label: 'None' },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <div className={`w-3 h-3 rounded-sm ${item.color}`} />
-              <span className="text-xs text-slate-500">{item.label}</span>
-            </div>
-          ))}
-          <div className="flex items-center gap-1.5">
-            <Shield className="w-3 h-3 text-slate-400" />
-            <span className="text-xs text-slate-500">Free Strike</span>
-          </div>
+        <div className="mt-4 flex items-center justify-between text-[10px] uppercase tracking-widest text-slate-500 font-mono">
+          <span>{last30[0].split('-').slice(1).join('/')}</span>
+          <span>Today</span>
         </div>
       </motion.div>
 
